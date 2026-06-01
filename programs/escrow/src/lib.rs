@@ -22,10 +22,15 @@ pub mod escrow {
         Ok(())
     }
 
-    #[instruction(discriminator = 0)]
+    #[instruction(discriminator = 1)]
     pub fn take(ctx: Context<Take>) -> Result<()> {
         ctx.accounts.deposit()?;
         ctx.accounts.withdraw_and_close()?;
+        Ok(())
+    }
+    #[instruction(discriminator = 2)]
+    pub fn refund(ctx: Context<Refund>) -> Result<()> {
+        ctx.accounts.refund_and_close_vault()?;
         Ok(())
     }
 }
