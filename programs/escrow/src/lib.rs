@@ -21,4 +21,11 @@ pub mod escrow {
         ctx.accounts.deposit(deposit)?;
         Ok(())
     }
+
+    #[instruction(discriminator = 0)]
+    pub fn take(ctx: Context<Take>) -> Result<()> {
+        ctx.accounts.deposit()?;
+        ctx.accounts.withdraw_and_close()?;
+        Ok(())
+    }
 }
