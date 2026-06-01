@@ -29,8 +29,8 @@ pub mod escrow {
         Ok(())
     }
     #[instruction(discriminator = 2)]
-    pub fn refund(ctx: Context<Refund>) -> Result<()> {
-        ctx.accounts.refund_and_close_vault()?;
+    pub fn refund(ctx: Context<Refund>, seed: u64) -> Result<()> {
+        ctx.accounts.refund_and_close_vault(seed)?;
         Ok(())
     }
 }

@@ -7,6 +7,7 @@ use anchor_spl::{
 use crate::{ESCROW_SEED, Escrow};
 
 #[derive(Accounts)]
+#[instruction(seed: u64)]
 pub struct Make<'info> {
     #[account(mut)]
     pub maker: Signer<'info>,
@@ -28,7 +29,7 @@ pub struct Make<'info> {
     #[account(
         init,
         payer=maker,
-        seeds = [ESCROW_SEED, maker.key().as_ref(), ],
+        seeds = [ESCROW_SEED, maker.key().as_ref(), seed.to_le_bytes().as_ref()],
         bump,
         space = Escrow::INIT_SPACE + Escrow::DISCRIMINATOR.len(),
     )]

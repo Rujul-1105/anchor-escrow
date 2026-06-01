@@ -12,6 +12,7 @@ use crate::{Escrow, ESCROW_SEED};
 // vault
 // token_program, system_program
 #[derive(Accounts)]
+#[instruction(seed: u64)]
 pub struct Refund<'info> {
     #[account(mut)]
     pub maker: Signer<'info>,
@@ -26,7 +27,7 @@ pub struct Refund<'info> {
         close = maker,
         has_one = mint_a,
         has_one = maker,
-        seeds = [ESCROW_SEED, maker.key().as_ref()], 
+        seeds = [ESCROW_SEED, maker.key().as_ref(),  seed.to_le_bytes().as_ref()], 
         bump = escrow.bump,
     )]
     pub escrow: Account<'info, Escrow>,
@@ -39,16 +40,25 @@ pub struct Refund<'info> {
 }
 
 impl<'info> Refund<'info> {
-    pub fn refund_and_close_vault(&mut self) -> Result<()> {
-        let seeds = [ESCROW_SEED, self.escrow.maker.as_ref(), &[self.escrow.bump]];
-        let signer_seeds = [&seeds[..]];
+    pub fn refund_and_close_vault(&mut self, seed: u64) -> Result<()> {
+
+        let seed_bytes = seed.to_le_bytes();
+        let seeds = &[
+            ESCROW_SEED,
+            self.escrow.maker.as_ref(),
+            seed_bytes.as_ref(),
+            &[self.escrow.bump],
+        ];
+
+        let signer_seeds = &[&seeds[..]];
+        
         let transfer_acccounts = TransferChecked {
             from: self.vault.to_account_info(),
             to: self.maker_ata_a.to_account_info(),
             mint: self.mint_a.to_account_info(),
             authority: self.escrow.to_account_info(),
         };
-        let cpi_ctx = CpiContext::new_with_signer(self.token_program.key(),transfer_acccounts , &signer_seeds,);
+        let cpi_ctx = CpiContext::new_with_signer(self.token_program.key(),transfer_acccounts , signer_seeds,);
         transfer_checked(cpi_ctx, self.vault.amount, self.mint_a.decimals)?;
 
         let cpi_accounts = CloseAccount {
@@ -56,7 +66,7 @@ impl<'info> Refund<'info> {
             destination: self.maker.to_account_info(),
             authority: self.escrow.to_account_info(),
         };
-        let cpi_ctx2 = CpiContext::new_with_signer(self.token_program.key(), cpi_accounts, &signer_seeds);
+        let cpi_ctx2 = CpiContext::new_with_signer(self.token_program.key(), cpi_accounts, signer_seeds);
         close_account(cpi_ctx2)?;
         Ok(())
     }
